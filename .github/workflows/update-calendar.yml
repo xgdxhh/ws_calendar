@@ -1,0 +1,37 @@
+name: Update Macro Calendar
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Generate ICS
+        run: |
+          uv sync --locked
+          uv run python generate_ics.py
+          uv run python generate_investing.py
+
+      - name: Publish to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Calendars
+          body: 每日自动更新，请勿在 Release 页面直接下载，按下面 README 订阅使用。
+          make_latest: true
+          files: '*.ics'
